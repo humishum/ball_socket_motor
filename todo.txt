@@ -1,0 +1,1 @@
+need to install pymeep using conda, move this to blade instead of mac bc f conda" 
