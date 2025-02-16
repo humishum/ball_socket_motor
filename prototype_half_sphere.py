@@ -1,51 +1,61 @@
 import numpy as np
 import magpylib as magpy
+from time import time
+start = time()
+#Placement Parameters
+r_m = 0.1      # hemisphere radius
+n_phi_rad = 4                   # steps in elevation
+n_theta_rad = 8                 # steps in azimuth
 
-# -------------------
-# 1) Parameter setup
-# -------------------
-r_m = 0.1                      # hemisphere radius
-n_phi = 4                   # steps in polar angle
-n_theta = 8                 # steps in azimuth
-coil_current = 1e7           # [A]
+# ElectroMagnet Parameters
 coil_diameter_m = 0.02          # [m] (or any length unit)
+coil_current_A = 0.01         # [A]
+base_input_current_A = 0.1
+n_turns = 200
+effective_current_A = base_input_current_A * n_turns # Approximated
 
-# --------------------------------
-# 2) Generate coils on hemisphere
-# --------------------------------
+# Generate coils on hemisphere
 coils = []
-
-phi_values = np.linspace(0, np.pi/2, n_phi)   # 0 to π/2 for a hemisphere
-theta_values = np.linspace(0, 2*np.pi, n_theta, endpoint=False)
 sensor_positions = []
+phi_values = np.linspace(0, np.pi/2, n_phi_rad)   # 0 to π/2 for a hemisphere
+theta_values = np.linspace(0, 2*np.pi, n_theta_rad, endpoint=False)
+
+# Senor Offsets
+range_offsets = [0, 0.005]  
+angle_offsets = [0, (theta_values[1]- theta_values[0])/2,]#  (theta_values[1]- theta_values[0])/4, (theta_values[1]- theta_values[0])/8]  
+angle_offsets.extend([a*-1 for a in angle_offsets])
+phi_offsets= [ 0, (phi_values[1]- phi_values[0])/2]
+
 for phi in phi_values:
     for theta in theta_values:
-        # Hemisphere surface coordinates
-        x = r_m * np.sin(phi) * np.cos(theta)
-        y = r_m * np.sin(phi) * np.sin(theta)
-        z = r_m * np.cos(phi)
+        for r_offset in range_offsets:
+            for theta_offset in angle_offsets:
+                for phi_offset in phi_offsets: 
+                    # Calculate sensor position
+                    x = (r_m + r_offset) * np.sin(phi+phi_offset) * np.cos(theta + theta_offset)
+                    y = (r_m + r_offset) * np.sin(phi+phi_offset) * np.sin(theta + theta_offset)
+                    z = (r_m + r_offset) * np.cos(phi+phi_offset)
+                    pos = np.array([x, y, z])
+                    sensor_positions.append(pos)
 
-        # Create a Loop (flat coil)
-        coil = magpy.current.Circle(current=coil_current, diameter=coil_diameter_m)
+                    # Add coil only for the 0 offset case
+                    if r_offset == 0 and theta_offset == 0 and phi_offset==0:   
+                        coil = magpy.current.Circle(current=coil_current_A, diameter=coil_diameter_m)
 
-        # Rotate coil from +z-axis to the local radial direction
-        pos = np.array([x, y, z])
-        sensor_positions.append(pos)
-        print(f"pos: {pos}")
-        radial_dir = pos / np.linalg.norm(pos)  # unit vector
-        z_axis = np.array([0,0,1])
-        cross_vec = np.cross(z_axis, radial_dir)
-        norm_cross = np.linalg.norm(cross_vec)
-        if norm_cross > 1e-9:
-            cross_vec /= norm_cross
-            angle = np.arccos(np.dot(z_axis, radial_dir))
-            # print(f"angle: {angle}")
-            # print(f"cross_vec: {cross_vec}")
-            coil.rotate_from_angax(angle=angle, axis=cross_vec, degrees=False)
+                        # Rotate coil from +z-axis to the local radial direction
+                        radial_dir = pos / np.linalg.norm(pos)  # Unit Vector for radial direction
+                        z_axis = np.array([0, 0, 1])
+                        z_cross_radial = np.cross(z_axis, radial_dir)  # Orthogonal vector to z_axis and radial_dir
+                        norm_cross = np.linalg.norm(z_cross_radial)  # Magnitude 
 
-        # Move coil out to the hemisphere surface
-        coil.move(pos)
-        coils.append(coil)
+                        if norm_cross > 1e-9:
+                            z_cross_radial /= norm_cross
+                            angle = np.arccos(np.dot(z_axis, radial_dir))
+                            coil.rotate_from_angax(angle=angle, axis=z_cross_radial, degrees=False)
+
+                        # Move coil out to the hemisphere surface
+                        coil.move(pos)
+                        coils.append(coil)
 
 # Combine all coils into a single Collection
 collection = magpy.Collection(coils)
@@ -60,10 +70,17 @@ collection = magpy.Collection(coils)
 # pts = [[x, y, 0] for x in xs for y in ys]  # z=0 plane
 
 # pts = np.array([[0,0,0], [1,0,0], [0,1,0], [0,0,1], [1,1,1], [1,0,1], [0,1,1], [1,1,0]])*0.1
-sensor = magpy.Sensor(sensor_positions)
 
+
+# sensor = magpy.Sensor(sensor_positions)
+sensors = [magpy.Sensor(i) for i in sensor_positions]
+[sensor.getB(collection) for sensor in sensors]
+collection.add(sensors)
 # Compute the magnetic field at each sensor point
-B_values = sensor.getB(collection)
+# B_values = sensor.getB(collection)
+
+
+
 # print("Magnetic field vectors at sensor points:")
 # for pt, B in zip(pts, B_values):
 #     print(f"At {pt}: B = {B}")
@@ -95,11 +112,13 @@ B_values = sensor.getB(collection)
 # * style.arrow_color='black': arrow color (optional)
 
 # magpy.show(collection, sensor)
+print(f"{time()-start}s")
 fig = magpy.show(
     collection,
-    sensor,
-    # output="model3d"
-    output=("Bxy", "Bxz", "Byz"),
+    sensors,
+    output="model3d", 
+    arrow = True
+    # output=("Bxy", "Bxz", "Byz"),
     # style={
     #     # "color": "value",               # Color each sensor marker by the B-field magnitude.
     #     "marker": {"size": 2},          # Define marker size.

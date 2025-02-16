@@ -44,4 +44,4 @@ if __name__ == "__main__":
     # Print the final DataFrame
     print("\nCalibration Data:")
     print(data)
-    data.to_csv("cal_data.yaml")
+    data.to_csv("generated/cal_data.yaml")
