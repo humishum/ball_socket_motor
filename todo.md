@@ -1,3 +1,15 @@
+
+- Magnet designer is basically done 
+2/25
+Next steps: 
+    - Run simulation for all magnet types, and sweep with acceptable current and size paraeters 
+    - Estimate needed Torque at radius to hold sphere at constant postion 
+    - See which of the confugurations can support this 
+    - Go with that for CAD and EE design 
+
+
+
+
 - Finalize a prototype design: 
     - Using simulation, find the effective MAX field strength at X sensor positions around the sphere. 
         - This should basically determine our maximum stiffness. 
@@ -11,25 +23,6 @@ min(current) within [0,0.5A]
 min(number_turns)
 max(pull_strength)
 keep diameter [1, 2.5] cm 
-
-Define a base class for the type of magnet. 
-Set up simulation for each magnet, compute maximum field strength at X sensor positions around the sphere. 
-
-
-
-
-need to install pymeep using conda, move this to blade instead of mac bc f conda" 
-
-USe magnet designs and see what hyperparameters we need to generate enough torque to hold the sphere at constant position. 
-Use this to generate the CAD and circuitry. 
-This is the fastest way to prototype. 
-
-
-
-
-
-
-
 
 
 
