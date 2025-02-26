@@ -44,25 +44,26 @@ def calculate_field_vs_distance(radii, current, z_points):
 if __name__ == "__main__":
     # Example: 3-turn coil with increasing radii
     # radii = [0.05, 0.052, 0.054]  # radii in meters
-    radii = np.linspace(.003, .0058, 50)
-    current = 5.0  # 1 Ampere
-    z = 0.03  # 3cm from center
+    n_turns = 50 
+    inner_radii_m = 0.003
+    outer_radii_m = 0.0058
+    radii = np.linspace(inner_radii_m, outer_radii_m,n_turns)
+    current = 5.0  
+    z_m = 0.01  # 3cm from center
     
     # Calculate field at a single point
-    B = calculate_magnetic_field(radii, current, z)
-    print(f"Magnetic field at z={z*100:.1f}cm: {B*1000:.2f} mT")
+    B = calculate_magnetic_field(radii, current, z_m)
+    print(f"Magnetic field at z={z_m*100:.1f}cm: {B*1000:.2f} mT")
     
     # Calculate field at multiple points along z-axis
     z_points = np.linspace(0.01, 0.1, 50)  # 1cm to 10cm
     B_points = calculate_field_vs_distance(radii, current, z_points)
     
-    # Print some values along the axis
     print("\nField strength at different distances:")
     for i in range(0, len(z_points), 10):
         print(f"z={z_points[i]*100:.1f}cm: {B_points[i]*1000:.2f} mT")
-    print(f"\n Total Field Strength: {np.sum(B_points):.3f}")
 
 
-    # B =  kg / (s^2 * A )
-
+    # T = N/A*m 
     # Need to move 0.5 KG force 
+    

@@ -2,8 +2,8 @@ import numpy as np
 import magpylib as magpy
 from time import time
 import matplotlib.pyplot as plt
+from magnet_designer import CoilCylinder, SimpleCoil
 
-start = time()
 
 #Placement Parameters
 r_m = 0.1      # hemisphere radius
@@ -11,15 +11,17 @@ n_phi_rad = 4   # steps in elevation
 n_theta_rad = 8 # steps in azimuth
 
 ##  Electromagnet Parameters
-coil_diameter_m = 0.02          # [m] (or any length unit)
+coil_diameter_m = 0.05          
 base_input_current_A = 0.5
 n_turns = 250
 effective_current_A = base_input_current_A * n_turns # Approximated
+
 # FerroMagnetic Center(need characterization)
-include_ferro_center = True
+include_ferro_center = False
+if include_ferro_center: 
+    print("CUSTOM FERRO MAGNET ADDITION ENABLED")
 ferro_polarization=(.1,.2,.3) 
 ferro_dimension=(.01,.01)
-
 
 # Generate coils on hemisphere
 coils = []
@@ -48,8 +50,20 @@ for phi in phi_values: # elevation
 
                     # Add coil only for the 0 offset case
                     if r_offset == 0 and theta_offset == 0 and phi_offset==0:   
-                        coil = magpy.current.Circle(current=effective_current_A, diameter=coil_diameter_m)
+                        # Default Coil Loop
+                        # coil = magpy.current.Circle(current=effective_current_A, diameter=coil_diameter_m)
                         
+                        # Default Magnet
+                        # magnet = magpy.magnet.Cylinder(position=(0,0,0), dimension=(coil_diameter_m, 0.01), polarization=ferro_polarization)
+                        # coil = magnet
+
+                        ## Custom Magnet Toggles
+                        # simple_coil  = SimpleCoil(n_turns=n_turns, current_a_base=base_input_current_A, diameter_m=coil_diameter_m)
+                        # coil = simple_coil.get_magnet()
+
+                        coil_cylinder = CoilCylinder(n_turns=n_turns, current_a=effective_current_A, coil_diameter=coil_diameter_m, coil_height=0.01, magnetization=ferro_polarization)
+                        coil = coil_cylinder.get_magnet()
+
                         # Rotate coil from +z-axis to the local radial direction
                         radial_dir = pos / np.linalg.norm(pos)  # Unit Vector for radial direction
                         z_axis = np.array([0, 0, 1])
@@ -76,9 +90,6 @@ sensors = [magpy.Sensor(i) for i in sensor_positions]
 collection.add(sensors)
 
 
-print(f"{time()-start}s")
-
-
 ## PLOTTING 
 
 
@@ -93,7 +104,9 @@ X_top, Y_top = np.meshgrid(xs_top, ys_top)
 grid_top = np.stack((X_top, Y_top, np.zeros_like(X_top)), axis=2)
 
 # Compute the B-field on the top view grid and scale it
+t0 = time()
 B_top = magpy.getB(collection, grid_top) * 1E-3
+print(f"Time to compute B_top: {time()-t0:.3f}")
 
 # Calculate the magnetic energy density: Energy = 0.5 * |B|^2
 Energy_top = 0.5 * np.sum(np.square(B_top), axis=2)
@@ -110,8 +123,9 @@ zs_side = np.linspace(-grid_length_m, grid_length_m, nz_side)
 X_side, Z_side = np.meshgrid(xs_side, zs_side)
 # Create a grid of points in the y=0 plane (side view)
 grid_side = np.stack((X_side, np.zeros_like(X_side), Z_side), axis=2)
-
+t0 = time()
 B_side = magpy.getB(collection, grid_side) * 1E-3
+print(f"Time to compute B_side: {time()-t0:.3f}")
 Energy_side = 0.5 * np.sum(np.square(B_side), axis=2)
 # For the side view, the first axis corresponds to z and the second to x
 force_side = np.gradient(Energy_side, zs_side, xs_side)

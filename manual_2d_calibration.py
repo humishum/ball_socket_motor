@@ -1,4 +1,4 @@
-
+""" Measure B field strength on rail"""
 from itertools import product
 from pprint import pprint as print
 import pandas as pd 

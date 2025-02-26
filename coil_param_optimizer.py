@@ -3,7 +3,7 @@ import magpylib as mag
 from scipy.optimize import differential_evolution
 
 # Constants
-mu0 = 4 * np.pi * 1e-7  # permeability of free space in H/m
+mu0 = 4 * np.pi * 1e-7* (1/500) # permeability of free space in H/m
 
 def compute_pull_strength(current, number_turns, coil_diameter):
     """
