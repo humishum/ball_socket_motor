@@ -262,6 +262,35 @@ def sweep_magnet_designs():
                             'diameter_m': coil_diameter
                         }
                         config_name = f"SimpleCoil_d{coil_diameter}_c{current}_t{n_turns}"
+                        
+                        # Create system and compute metrics for SimpleCoil
+                        print(f"Testing configuration: {config_name}")
+                        
+                        # Create the hemisphere system with current parameters
+                        collection, sensor_positions = create_hemisphere_magnetic_system(
+                            magnet_class, params, system_params
+                        )
+                        
+                        # Compute energy and force fields
+                        grid_length_m = system_params['r_m'] * 1.25
+                        energy_data = compute_energy_and_force(collection, grid_length_m)
+                        
+                        # Calculate performance metrics
+                        metrics = calculate_metrics(energy_data)
+                        
+                        # Generate plot
+                        fig = plot_energy_field(energy_data, config_name)
+                        plt.savefig(f"magnet_sweep_{config_name}.png")
+                        plt.close(fig)
+                        
+                        # Store results
+                        result = {
+                            'config_name': config_name,
+                            'magnet_class': magnet_class.__name__,
+                            'params': params,
+                            'metrics': metrics
+                        }
+                        results.append(result)
                     
                     elif magnet_class == CoilCylinder:
                         # For CoilCylinder, we'll also sweep through heights and magnetization
@@ -305,37 +334,6 @@ def sweep_magnet_designs():
                                     'metrics': metrics
                                 }
                                 results.append(result)
-                        
-                        # Skip the CoilCylinder loop for SimpleCoil class
-                        if magnet_class == SimpleCoil:
-                            # Create system and compute metrics
-                            print(f"Testing configuration: {config_name}")
-                            
-                            # Create the hemisphere system with current parameters
-                            collection, sensor_positions = create_hemisphere_magnetic_system(
-                                magnet_class, params, system_params
-                            )
-                            
-                            # Compute energy and force fields
-                            grid_length_m = system_params['r_m'] * 1.25
-                            energy_data = compute_energy_and_force(collection, grid_length_m)
-                            
-                            # Calculate performance metrics
-                            metrics = calculate_metrics(energy_data)
-                            
-                            # Generate plot
-                            fig = plot_energy_field(energy_data, config_name)
-                            plt.savefig(f"magnet_sweep_{config_name}.png")
-                            plt.close(fig)
-                            
-                            # Store results
-                            result = {
-                                'config_name': config_name,
-                                'magnet_class': magnet_class.__name__,
-                                'params': params,
-                                'metrics': metrics
-                            }
-                            results.append(result)
     
     # Sort results by a composite score and display the best configurations
     for result in results:
@@ -358,20 +356,47 @@ def sweep_magnet_designs():
     # Create comparison plot of top configurations
     plt.figure(figsize=(12, 8))
     top_configs = [result['config_name'] for result in results[:10]]
+
+    # Normalize each metric to a 0-1 scale for fair comparison
     scores = [result['score'] for result in results[:10]]
     force_strengths = [result['metrics']['force_strength'] for result in results[:10]]
     energy_contrasts = [result['metrics']['energy_contrast'] for result in results[:10]]
-    
+
+    # Normalize to 0-1 scale
+    def normalize(values):
+        min_val = min(values)
+        max_val = max(values)
+        return [(v - min_val) / (max_val - min_val) if max_val > min_val else 0.5 for v in values]
+
+    norm_scores = normalize(scores)
+    norm_force = normalize(force_strengths)
+    norm_energy = normalize(energy_contrasts)
+
+    # Plot normalized values
+    plt.barh(top_configs, norm_scores, alpha=0.7, label='Overall Score (normalized)')
+    plt.barh(top_configs, norm_force, alpha=0.5, label='Force Strength (normalized)')
+    plt.barh(top_configs, norm_energy, alpha=0.3, label='Energy Contrast (normalized)')
+
+    plt.xlabel('Normalized Value (0-1)')
+    plt.ylabel('Configuration')
+    plt.title('Top Performing Magnet Configurations (Normalized Metrics)')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("magnet_sweep_comparison_normalized.png")
+    plt.show()
+
+    # Also create a non-normalized plot with log scale
+    plt.figure(figsize=(12, 8))
     plt.barh(top_configs, scores, alpha=0.7, label='Overall Score')
     plt.barh(top_configs, force_strengths, alpha=0.5, label='Force Strength')
     plt.barh(top_configs, energy_contrasts, alpha=0.3, label='Energy Contrast')
-    
-    plt.xlabel('Score / Metric Value')
+    plt.xscale('log')  # Use log scale to handle different magnitudes
+    plt.xlabel('Score / Metric Value (log scale)')
     plt.ylabel('Configuration')
-    plt.title('Top Performing Magnet Configurations')
+    plt.title('Top Performing Magnet Configurations (Log Scale)')
     plt.legend()
     plt.tight_layout()
-    plt.savefig("magnet_sweep_comparison.png")
+    plt.savefig("magnet_sweep_comparison_log.png")
     plt.show()
     
     return results
