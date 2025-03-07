@@ -1,3 +1,5 @@
+# update: this doesn't really work and is obsolete, maybe revisit for fun but magpylib is too good 
+# 
 import meep as mp
 import numpy as np
 
