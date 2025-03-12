@@ -1,4 +1,4 @@
-*[WIP]* Ball and Socket Motor
+WIP Ball and Socket Motor
 --- 
 note: very early stages of implementation,
 
