@@ -1,4 +1,14 @@
 
+Decide on dimensions/count of EMs, update dynamic simulator to intake a config file with dimensions and positions 
+
+Run simulator with this config, and get GUI controls working
+
+While that's working, get started on EE prototyping 
+Need to spec out Mosfets and Driver circuit. Start with one coil, take measurements on current draw and output. Model this for more and design on a design, hopefully fit in a perf board for prototyping 
+
+Use this for initial FW development, at least to a point where we can have a rev1 PCB. 
+
+
 - Magnet designer is basically done 
 2/25
 Next steps: 
