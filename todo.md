@@ -1,4 +1,29 @@
 
+4-2-25 
+- took a longer than expected break from this project, some review to get back up to speed and fast track next steps 
+Sensors choices are in, some of which we've already soldered connections onto. 
+I think for now, we need to skip the simulator GUI and go straight to HW/FW development. Simulator can be used for optimization once a rev1 design is completed. 
+
+We need two simulatenous protyping efforts: 
+1. Breadboard containing EM driver circuit, and a way to measure the output B-Field. 
+Primary goal here is to test and verify the driver circuit, and verify field strength. 
+    a. situate the EM, connect to driver circuit, and create slider for magnetometer with ruler to measure distance vs B-Field 
+    - we can use this to model the real world strength, and compare to theory and simulation 
+2. prototype HW for movement
+Primary goal here to test movement of sphere, and test the feedback loop. 
+Start with a 2d design, where we have a number of EM's in a line or square, a permanent magnet on top, and control of the magnets either via potentiometer or digital interface 
+
+Next steps should be as follows: 
+- Spec EE requirements, and design driver circuit schematic 
+- Build driver circuit on protoboard 
+- Build circuit to measure B-Field 
+- Iterate on prototype to get to #2 
+
+
+
+
+========================================
+
 Decide on dimensions/count of EMs, update dynamic simulator to intake a config file with dimensions and positions 
 
 Run simulator with this config, and get GUI controls working
